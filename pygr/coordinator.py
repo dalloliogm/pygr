@@ -11,6 +11,24 @@ import socket
 import dbfile
 import logging
 
+class ProxyTransport(xmlrpclib.Transport):
+    def __init__(self,http_proxy):
+        print 'setting up http_proxy'
+        self.http_proxy = http_proxy
+        self._use_datetime = True
+
+    def make_connection(self,host):
+        self.realhost = host
+        import httplib
+        return httplib.HTTP(self.http_proxy)
+
+    def send_request(self, connection, handler, request_body):
+        connection.putrequest("POST", 'http://%s%s' % (self.realhost, handler))
+
+    def send_host(self, connection, host):
+        connection.putheader('Host', self.realhost)
+
+
 def get_hostname(host=None):
     'get FQDN for host, or current host if not specified'
     if host is None:
@@ -52,7 +70,14 @@ class XMLRPCClientObject(object):
 class XMLRPCClient(dict):
     'interface to XMLRPC server serving multiple named objects'
     def __init__(self,url):
-        self.server=xmlrpclib.ServerProxy(url)
+        try: 
+            http_proxy = os.environ['http_proxy']
+            if http_proxy.startswith('http://'):
+                http_proxy = http_proxy[7:]  #TODO: refine, implement https
+        except KeyError: http_proxy = 'None'
+        print http_proxy
+        self.server=xmlrpclib.ServerProxy(url, transport=ProxyTransport(http_proxy))
+        print 'http_proxy set'
     def __getitem__(self,name):
         'get connection to the named server object'
         try:
