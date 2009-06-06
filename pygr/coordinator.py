@@ -12,8 +12,10 @@ import dbfile
 import logging
 
 class ProxyTransport(xmlrpclib.Transport):
+	# NOTE: we are redifining ProxyTransport to support http_proxies.
+	# see http://www.python.org/doc/2.5.2/lib/xmlrpc-client-example.html
     def __init__(self,http_proxy):
-        print 'setting up http_proxy'
+#        print 'setting up http_proxy'
         self.http_proxy = http_proxy
         self._use_datetime = True
 
@@ -75,9 +77,9 @@ class XMLRPCClient(dict):
             if http_proxy.startswith('http://'):
                 http_proxy = http_proxy[7:]  #TODO: refine, implement https
         except KeyError: http_proxy = 'None'
-        print http_proxy
+#        print http_proxy
         self.server=xmlrpclib.ServerProxy(url, transport=ProxyTransport(http_proxy))
-        print 'http_proxy set'
+#        print 'http_proxy set'
     def __getitem__(self,name):
         'get connection to the named server object'
         try:
